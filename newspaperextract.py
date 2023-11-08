@@ -96,5 +96,5 @@ if __name__ == "__main__":
 
         # Extract and display unique words
         st.markdown("### Unique Words")
-        unique_words = await asyncio.run(get_all_unique_words(urls))
+        unique_words = await get_all_unique_words(urls)
         st.text_area("Unique Words", "\n".join(unique_words), height=400)
