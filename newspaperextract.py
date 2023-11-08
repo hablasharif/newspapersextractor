@@ -67,6 +67,12 @@ async def main(urls):
 
     return "\n".join(total_result)
 
+async def get_all_unique_words(urls):
+    unique_words = set()
+    for url in urls:
+        unique_words.update(await extract_unique_words(url))
+    return unique_words
+
 if __name__ == "__main__":
     st.title("Streamlit Web Scraper")
 
@@ -90,7 +96,5 @@ if __name__ == "__main__":
 
         # Extract and display unique words
         st.markdown("### Unique Words")
-        unique_words = set()
-        for url in urls:
-            unique_words.update(await asyncio.run(extract_unique_words(url)))
+        unique_words = await asyncio.run(get_all_unique_words(urls))
         st.text_area("Unique Words", "\n".join(unique_words), height=400)
