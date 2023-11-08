@@ -48,6 +48,12 @@ async def process_url(url):
         st.error(f"Error processing {url}: {e}")
         return ""
 
+async def extract_unique_words(url):
+    content = await extract_paragraphs(url)
+    words = " ".join(content).split()
+    unique_words = set(words)
+    return unique_words
+
 async def main(urls):
     total_result = []
 
@@ -81,3 +87,10 @@ if __name__ == "__main__":
         # Display the results in one output box
         st.text_area("Results", total_results, height=400)
         st.success("Scraping Complete!")
+
+        # Extract and display unique words
+        st.markdown("### Unique Words")
+        unique_words = set()
+        for url in urls:
+            unique_words.update(await asyncio.run(extract_unique_words(url)))
+        st.text_area("Unique Words", "\n".join(unique_words), height=400)
