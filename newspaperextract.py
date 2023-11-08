@@ -49,7 +49,7 @@ async def process_url(url):
         return ""
 
 async def main(urls):
-    total_words = []
+    total_result = []
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         loop = asyncio.get_event_loop()
@@ -57,12 +57,9 @@ async def main(urls):
 
         for completed_task in asyncio.as_completed(tasks):
             result = await completed_task
-            words = result.split()
-            total_words.extend(words)
+            total_result.append(result)
 
-    with st.expander("View Results"):
-
-        st.write(" ".join(total_words))
+    return "\n".join(total_result)
 
 if __name__ == "__main__":
     st.title("Streamlit Web Scraper")
@@ -75,12 +72,12 @@ if __name__ == "__main__":
         st.markdown("### Scraping URLs")
         st.write(urls)
 
-        st.markdown("### Progress")
+        st.markdown("### Results")
         progress_bar = st.progress(0)
 
-        for i, url in enumerate(urls):
-            st.write(f"Processing URL: {url}")
-            asyncio.run(main([url]))
-            progress_bar.progress((i + 1) / len(urls))
+        # Run the main function and get the concatenated results
+        total_results = asyncio.run(main(urls))
 
+        # Display the results in one output box
+        st.text_area("Results", total_results, height=400)
         st.success("Scraping Complete!")
