@@ -60,7 +60,8 @@ async def main(urls):
             words = result.split()
             total_words.extend(words)
 
-    with st.beta_expander("View Results"):
+    with st.expander("View Results"):
+
         st.write(" ".join(total_words))
 
 if __name__ == "__main__":
