@@ -4,6 +4,7 @@ import asyncio
 from bs4 import BeautifulSoup
 import re
 from concurrent.futures import ThreadPoolExecutor
+from collections import Counter
 
 # Define a regular expression pattern to match English text
 english_pattern = re.compile(r'[a-zA-Z\s]+')
@@ -59,7 +60,13 @@ async def main(urls):
             result = await completed_task
             total_result.append(result)
 
-    return "\n".join(total_result)
+    # Combine results into a single string
+    combined_results = " ".join(total_result)
+
+    # Extract unique words
+    unique_words = Counter(combined_results.split())
+
+    return unique_words
 
 if __name__ == "__main__":
     st.title("Streamlit Web Scraper")
@@ -75,9 +82,12 @@ if __name__ == "__main__":
         st.markdown("### Results")
         progress_bar = st.progress(0)
 
-        # Run the main function and get the concatenated results
-        total_results = asyncio.run(main(urls))
+        # Run the main function and get the unique words
+        unique_words = asyncio.run(main(urls))
 
-        # Display the results in one output box
-        st.text_area("Results", total_results, height=400)
+        # Display the total number of unique words
+        st.write(f"Total Unique Words: {len(unique_words)}")
+
+        # Display the unique words in a text area
+        st.text_area("Unique Words", "\n".join(f"{word}: {count}" for word, count in unique_words.items()), height=400)
         st.success("Scraping Complete!")
