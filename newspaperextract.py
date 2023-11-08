@@ -56,13 +56,9 @@ async def main(urls):
         loop = asyncio.get_event_loop()
         tasks = [loop.create_task(process_url(url)) for url in urls]
 
-        for i, completed_task in enumerate(asyncio.as_completed(tasks), 1):
+        for completed_task in asyncio.as_completed(tasks):
             result = await completed_task
             total_result.append(result)
-
-            # Update progress bar
-            progress_percent = i / len(urls) * 100
-            st.progress(progress_percent)
 
     # Combine results into a single string
     combined_results = " ".join(total_result)
@@ -70,7 +66,7 @@ async def main(urls):
     # Extract unique words
     unique_words = Counter(combined_results.split())
 
-    return combined_results, unique_words
+    return unique_words
 
 if __name__ == "__main__":
     st.title("Streamlit Web Scraper")
@@ -83,13 +79,11 @@ if __name__ == "__main__":
         st.markdown("### Scraping URLs")
         st.write(urls)
 
-        st.markdown("### Original Texts")
-        original_texts = asyncio.run(main(urls))[0]
-        st.text_area("Original Texts", original_texts, height=400)
-
         st.markdown("### Results")
+        progress_bar = st.progress(0)
+
         # Run the main function and get the unique words
-        unique_words = asyncio.run(main(urls))[1]
+        unique_words = asyncio.run(main(urls))
 
         # Display the total number of unique words
         st.write(f"Total Unique Words: {len(unique_words)}")
