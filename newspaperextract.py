@@ -40,27 +40,34 @@ async def extract_paragraphs(url):
 
         return filtered_content
 
-async def process_url(url, timeout=10):
+async def process_url(url, unique_words):
     try:
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
             content = await extract_paragraphs(url)
-            return " ".join(content)
+            paragraphs_text = " ".join(content)
+
+            # Extract unique words
+            words = set(paragraphs_text.split())
+            unique_words.update(words)
+
+            return paragraphs_text
     except Exception as e:
         st.error(f"Error processing {url}: {e}")
         return ""
 
 async def main(urls, timeout=60):
     total_result = []
+    unique_words = set()
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         loop = asyncio.get_event_loop()
-        tasks = [loop.create_task(process_url(url, timeout)) for url in urls]
+        tasks = [loop.create_task(process_url(url, unique_words)) for url in urls]
 
         for completed_task in asyncio.as_completed(tasks):
             result = await completed_task
             total_result.append(result)
 
-    return "\n".join(total_result)
+    return "\n".join(total_result), unique_words
 
 if __name__ == "__main__":
     st.title("Streamlit Web Scraper")
@@ -78,8 +85,12 @@ if __name__ == "__main__":
         progress_bar = st.progress(0)
 
         # Run the main function with the specified timeout and get the concatenated results
-        total_results = asyncio.run(main(urls, timeout))
+        total_results, unique_words = asyncio.run(main(urls, timeout))
 
         # Display the results in one output box
         st.text_area("Results", total_results, height=400)
-        st.success("Scraping Complete!")
+        
+        # Display unique words and total count in another output box
+        st.markdown("### Unique Words")
+        st.text_area("Unique Words", "\n".join(sorted(unique_words)), height=200)
+        st.success(f"Scraping Complete! Total Unique Words: {len(unique_words)}")
