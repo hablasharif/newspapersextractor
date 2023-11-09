@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 # Define a regular expression pattern to match English text
 english_pattern = re.compile(r'[a-zA-Z\s]+')
 
-async def fetch_url_content(session, url, max_retries=3, timeout=200):
+async def fetch_url_content(session, url, max_retries=3, timeout=60):
     for retry in range(max_retries):
         try:
             async with session.get(url, timeout=timeout) as response:
@@ -16,9 +16,9 @@ async def fetch_url_content(session, url, max_retries=3, timeout=200):
                 html = await response.text()
                 return html
         except aiohttp.ClientError as e:
-            st.warning(f"Error fetching {url}, Retry {retry + 10}/{max_retries}: {e}")
+            st.warning(f"Error fetching {url}, Retry {retry + 1}/{max_retries}: {e}")
         except asyncio.TimeoutError:
-            st.warning(f"Timeout fetching {url}, Retry {retry + 10}/{max_retries}")
+            st.warning(f"Timeout fetching {url}, Retry {retry + 1}/{max_retries}")
 
     return None
 
@@ -40,17 +40,11 @@ async def extract_paragraphs(url):
 
         return filtered_content
 
-async def process_url(url, unique_words):
+async def process_url(url, timeout=10):
     try:
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session:
             content = await extract_paragraphs(url)
-            paragraphs_text = " ".join(content)
-
-            # Extract unique words
-            words = set(paragraphs_text.split())
-            unique_words.update(words)
-
-            return paragraphs_text
+            return " ".join(content)
     except Exception as e:
         st.error(f"Error processing {url}: {e}")
         return ""
@@ -59,13 +53,19 @@ async def main(urls, timeout=60):
     total_result = []
     unique_words = set()
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         loop = asyncio.get_event_loop()
-        tasks = [loop.create_task(process_url(url, unique_words)) for url in urls]
+        tasks = [loop.create_task(process_url(url, timeout)) for url in urls]
 
-        for completed_task in asyncio.as_completed(tasks):
+        for i, completed_task in enumerate(asyncio.as_completed(tasks), 1):
             result = await completed_task
             total_result.append(result)
+            progress_percentage = i / len(urls) * 100
+            st.progress(progress_percentage)
+
+            # Extract unique words from the result
+            words = result.split()
+            unique_words.update(words)
 
     return "\n".join(total_result), unique_words
 
@@ -84,13 +84,16 @@ if __name__ == "__main__":
         timeout = st.number_input("Timeout (seconds)", value=60)
         progress_bar = st.progress(0)
 
-        # Run the main function with the specified timeout and get the concatenated results
+        # Run the main function with the specified timeout and get the concatenated results and unique words
         total_results, unique_words = asyncio.run(main(urls, timeout))
 
         # Display the results in one output box
         st.text_area("Results", total_results, height=400)
         
-        # Display unique words and total count in another output box
-        st.markdown("### Unique Words")
-        st.text_area("Unique Words", "\n".join(sorted(unique_words)), height=200)
-        st.success(f"Scraping Complete! Total Unique Words: {len(unique_words)}")
+        # Display unique words in another output box
+        st.text_area("Unique Words", "\n".join(unique_words), height=400)
+        
+        # Display total count of unique words
+        st.info(f"Total Unique Words: {len(unique_words)}")
+        
+        st.success("Scraping Complete!")
