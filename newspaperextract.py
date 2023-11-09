@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 # Define a regular expression pattern to match English text
 english_pattern = re.compile(r'[a-zA-Z\s]+')
 
-async def fetch_url_content(session, url, max_retries=3, timeout=60):
+async def fetch_url_content(session, url, max_retries=3, timeout=10):
     for retry in range(max_retries):
         try:
             async with session.get(url, timeout=timeout) as response:
@@ -49,7 +49,7 @@ async def process_url(url, timeout=10):
         st.error(f"Error processing {url}: {e}")
         return ""
 
-async def main(urls, timeout=60):
+async def main(urls, timeout=10):
     total_result = []
 
     with ThreadPoolExecutor(max_workers=5) as executor:
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         st.write(urls)
 
         st.markdown("### Results")
-        timeout = st.number_input("Timeout (seconds)", value=60)
+        timeout = st.number_input("Timeout (seconds)", value=10)
         progress_bar = st.progress(0)
 
         # Run the main function with the specified timeout and get the concatenated results
@@ -82,4 +82,4 @@ if __name__ == "__main__":
 
         # Display the results in one output box
         st.text_area("Results", total_results, height=400)
-        st.success("Scraping Complete!")  
+        st.success("Scraping Complete!")
