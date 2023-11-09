@@ -42,7 +42,7 @@ async def extract_paragraphs(url):
 
 async def process_url(url, timeout=10):
     try:
-        async with aiohttp.Timeout(timeout):
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session:
             content = await extract_paragraphs(url)
             return " ".join(content)
     except Exception as e:
