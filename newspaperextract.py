@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 # Define a regular expression pattern to match English text
 english_pattern = re.compile(r'[a-zA-Z\s]+')
 
-async def fetch_url_content(session, url, max_retries=3, timeout=60):
+async def fetch_url_content(session, url, max_retries=3, timeout=200):
     for retry in range(max_retries):
         try:
             async with session.get(url, timeout=timeout) as response:
@@ -16,9 +16,9 @@ async def fetch_url_content(session, url, max_retries=3, timeout=60):
                 html = await response.text()
                 return html
         except aiohttp.ClientError as e:
-            st.warning(f"Error fetching {url}, Retry {retry + 1}/{max_retries}: {e}")
+            st.warning(f"Error fetching {url}, Retry {retry + 10}/{max_retries}: {e}")
         except asyncio.TimeoutError:
-            st.warning(f"Timeout fetching {url}, Retry {retry + 1}/{max_retries}")
+            st.warning(f"Timeout fetching {url}, Retry {retry + 10}/{max_retries}")
 
     return None
 
@@ -59,7 +59,7 @@ async def main(urls, timeout=60):
     total_result = []
     unique_words = set()
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         loop = asyncio.get_event_loop()
         tasks = [loop.create_task(process_url(url, unique_words)) for url in urls]
 
