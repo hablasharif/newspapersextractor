@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 # Define a regular expression pattern to match English text
 english_pattern = re.compile(r'[a-zA-Z\s]+')
 
-async def fetch_url_content(session, url, max_retries=3, timeout=10):
+async def fetch_url_content(session, url, max_retries=3, timeout=60):
     for retry in range(max_retries):
         try:
             async with session.get(url, timeout=timeout) as response:
@@ -49,18 +49,25 @@ async def process_url(url, timeout=10):
         st.error(f"Error processing {url}: {e}")
         return ""
 
-async def main(urls, timeout=10):
+async def main(urls, timeout=60):
     total_result = []
+    unique_words = set()
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         loop = asyncio.get_event_loop()
         tasks = [loop.create_task(process_url(url, timeout)) for url in urls]
 
-        for completed_task in asyncio.as_completed(tasks):
+        for i, completed_task in enumerate(asyncio.as_completed(tasks), 1):
             result = await completed_task
             total_result.append(result)
+            progress_percentage = i / len(urls) * 100
+            st.progress(progress_percentage)
 
-    return "\n".join(total_result)
+            # Extract unique words from the result
+            words = result.split()
+            unique_words.update(words)
+
+    return "\n".join(total_result), unique_words
 
 if __name__ == "__main__":
     st.title("Streamlit Web Scraper")
@@ -74,12 +81,19 @@ if __name__ == "__main__":
         st.write(urls)
 
         st.markdown("### Results")
-        timeout = st.number_input("Timeout (seconds)", value=10)
+        timeout = st.number_input("Timeout (seconds)", value=60)
         progress_bar = st.progress(0)
 
-        # Run the main function with the specified timeout and get the concatenated results
-        total_results = asyncio.run(main(urls, timeout))
+        # Run the main function with the specified timeout and get the concatenated results and unique words
+        total_results, unique_words = asyncio.run(main(urls, timeout))
 
         # Display the results in one output box
         st.text_area("Results", total_results, height=400)
+        
+        # Display unique words in another output box
+        st.text_area("Unique Words", "\n".join(unique_words), height=400)
+        
+        # Display total count of unique words
+        st.info(f"Total Unique Words: {len(unique_words)}")
+        
         st.success("Scraping Complete!")
