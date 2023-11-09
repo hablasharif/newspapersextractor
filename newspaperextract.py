@@ -51,23 +51,16 @@ async def process_url(url, timeout=10):
 
 async def main(urls, timeout=60):
     total_result = []
-    unique_words = set()
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         loop = asyncio.get_event_loop()
         tasks = [loop.create_task(process_url(url, timeout)) for url in urls]
 
-        for i, completed_task in enumerate(asyncio.as_completed(tasks), 1):
+        for completed_task in asyncio.as_completed(tasks):
             result = await completed_task
             total_result.append(result)
-            progress_percentage = i / len(urls) * 100
-            st.progress(progress_percentage)
 
-            # Extract unique words from the result
-            words = result.split()
-            unique_words.update(words)
-
-    return "\n".join(total_result), unique_words
+    return "\n".join(total_result)
 
 if __name__ == "__main__":
     st.title("Streamlit Web Scraper")
@@ -84,16 +77,9 @@ if __name__ == "__main__":
         timeout = st.number_input("Timeout (seconds)", value=60)
         progress_bar = st.progress(0)
 
-        # Run the main function with the specified timeout and get the concatenated results and unique words
-        total_results, unique_words = asyncio.run(main(urls, timeout))
+        # Run the main function with the specified timeout and get the concatenated results
+        total_results = asyncio.run(main(urls, timeout))
 
         # Display the results in one output box
         st.text_area("Results", total_results, height=400)
-        
-        # Display unique words in another output box
-        st.text_area("Unique Words", "\n".join(unique_words), height=400)
-        
-        # Display total count of unique words
-        st.info(f"Total Unique Words: {len(unique_words)}")
-        
-        st.success("Scraping Complete!")
+        st.success("Scraping Complete!")  
