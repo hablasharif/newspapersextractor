@@ -48,12 +48,6 @@ async def process_url(url):
         st.error(f"Error processing {url}: {e}")
         return ""
 
-async def extract_unique_words(url):
-    content = await extract_paragraphs(url)
-    words = " ".join(content).split()
-    unique_words = set(words)
-    return unique_words
-
 async def main(urls):
     total_result = []
 
@@ -66,12 +60,6 @@ async def main(urls):
             total_result.append(result)
 
     return "\n".join(total_result)
-
-async def get_all_unique_words(urls):
-    unique_words = set()
-    for url in urls:
-        unique_words.update(await extract_unique_words(url))
-    return unique_words
 
 if __name__ == "__main__":
     st.title("Streamlit Web Scraper")
@@ -93,8 +81,3 @@ if __name__ == "__main__":
         # Display the results in one output box
         st.text_area("Results", total_results, height=400)
         st.success("Scraping Complete!")
-
-        # Extract and display unique words
-        st.markdown("### Unique Words")
-        unique_words = await get_all_unique_words(urls)
-        st.text_area("Unique Words", "\n".join(unique_words), height=400)
